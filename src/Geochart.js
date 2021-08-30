@@ -2,17 +2,17 @@ import React, { useRef, useEffect, useState } from "react";
 import useResizeObserver from "./useResizeObserver";
 import { select, geoPath, geoMercator, geoConicEquidistant, min, max, scaleLinear } from "d3";
 
-function GeoChart({ data, coviddata, property }) {
+function GeoChart({ data, coviddata, property, date }) {
     const svgRef = useRef();
     const wrapperRef = useRef();
     const dimensions = useResizeObserver(wrapperRef);
     const [selectedCountry, setSelectedCountry] = useState("");
 
     useEffect(() => {
-        const svg = select(svgRef.current);
 
-        // Declaraing colorscale
-        const colorScale = [];
+        console.log(date);
+
+        const svg = select(svgRef.current);
 
         // Use resized dimensions, but fall back to get bounding client rect if no dimensions yet
         const { width, height } =
@@ -26,120 +26,96 @@ function GeoChart({ data, coviddata, property }) {
         const pathGenerator = geoPath().projection(projection);
 
         // Create path element for every country in the world
-        // CASE 1: From custom.geo.json
-        if (property !== "total_cases") {
+        // NOTE: Merge data into copy of GEO JSON
+        
+        //var coviddata_res = Object.entries(coviddata);
+        //console.log(coviddata_res);
 
-            // console.log(data.features)
+        /*
+        var cov_res = [];
+        for (const country of coviddata_res) {
+            const name = country[0];
+            console.log(name);
+            const Datum = country[1].data[5][property];
+            console.log(Datum);
+        }
+        */
 
-            const minProp = min(data.features, feature => feature.properties[property]);
-            const maxProp = max(data.features, feature => feature.properties[property]);
 
-            // Input, then output
-            const colorScale = scaleLinear()
-                .domain([minProp, maxProp])
-                .range(['#ccc', "teal"]);
-
-            svg.selectAll(".country")
-                .data(data.features)
-                .join("path")
-                .on("click", (e, feature) => {
-                    setSelectedCountry(selectedCountry === feature ? null : feature);
-                })
-                .attr("class", "country")
-                .transition() //zoom effect
-                .duration(1000)
-                .attr("fill", feature => colorScale(feature.properties[property]))
-                .attr("d", feature => pathGenerator(feature));
-            // render text
-            svg
-                .selectAll(".label")
-                .data([selectedCountry])
-                .join("text")
-                .attr("class", "label")
-                .text(
-                    feature =>
-                        feature &&
-                        feature.properties.name +
-                        ": " +
-                        feature.properties[property].toLocaleString()
-                )
-                .attr("x", 10)
-                .attr("y", 25);
-        } else { // CASE 2: COVID DATA
-
-            // NOTE: Merge data into copy of GEO JSON
-            var cov_res = Object.entries(coviddata).map(([k, v]) => (
-                { Label: k, Datum: v.data[v.data.length - 1].total_cases }
-            ));
-            //console.log("covidres")
-            //console.log(cov_res);
-
-            //console.log("data")
-            //console.log(data);
-
-            var copy = data;
-            //console.log("copy")
-            //console.log(copy);
-
-            for (const i of Object.entries(copy.features)) {
-                //console.log(i[1].properties.adm0_a3);
-                var name = "";
-                var num = -100;
-
-                // TODO: LOOP THROUGH COVIDDATA
-                for (const j of cov_res) {
-                    name = j.Label;
-                    if (name === i[1].properties.adm0_a3) {
-                        //console.log(name)
-                        if (j.Datum) {
-                            num = j.Datum;
+        var cov_res = Object.entries(coviddata).map(([k, v]) => (
+            {
+                Label: k,
+                Datum: (function () {
+                    for (const day of v.data) {
+                        var search_date = day.date;
+                        if (search_date === date) {
+                            return day[property];
                         }
-                        break;
                     }
-                }
-
-                i[1].properties.num = num;
-                //console.log(i[1].properties.num)
+                    return -100;
+                })()
             }
-            //console.log(copy);
+        ));
 
-            const minProp = min(data.features, feature => feature.properties.num);
-            const maxProp = max(data.features, feature => feature.properties.num);
 
-            // Input, then output
-            const colorScale = scaleLinear()
-                .domain([minProp, maxProp])
-                .range(['#ccc', "teal"]);
-            svg.selectAll(".country")
-                .data(data.features)
-                .join("path")
-                .on("click", (e, feature) => {
-                    setSelectedCountry(selectedCountry === feature ? null : feature);
-                })
-                .attr("class", "country")
-                .transition() //zoom effect
-                .duration(1000)
-                .attr("fill", feature => colorScale(feature.properties.num))
-                .attr("d", feature => pathGenerator(feature));
-            // render text
-            svg
-                .selectAll(".label")
-                .data([selectedCountry])
-                .join("text")
-                .attr("class", "label")
-                .text(
-                    feature =>
-                        feature &&
-                        feature.properties.name +
-                        ": " +
-                        feature.properties.num.toLocaleString()
-                )
-                .attr("x", 10)
-                .attr("y", 25);
-            
+        var copy = data;
+
+        for (const i of Object.entries(copy.features)) {
+            //console.log(i[1].properties.adm0_a3);
+            var name = "";
+            var num = -100;
+
+            // TODO: LOOP THROUGH COVIDDATA
+            for (const j of cov_res) {
+                name = j.Label;
+                if (name === i[1].properties.adm0_a3) {
+                    //console.log(name)
+                    if (j.Datum) {
+                        num = j.Datum;
+                    }
+                    break;
+                }
+            }
+            i[1].properties.num = num;
         }
 
-    }, [data, dimensions, property, selectedCountry]);
+        const minProp = min(data.features, feature => feature.properties.num);
+        const maxProp = max(data.features, feature => feature.properties.num);
+
+        // Input, then output
+        const colorScale = scaleLinear()
+            .domain([minProp, maxProp])
+            .range(['#ccc', "teal"]);
+        svg.selectAll(".country")
+            .data(data.features)
+            .join("path")
+            .on("click", (e, feature) => {
+                setSelectedCountry(selectedCountry === feature ? null : feature);
+            })
+            .attr("class", "country")
+            .transition() //zoom effect
+            .duration(1000)
+            .attr("fill", feature => (feature.properties.num === -100) ? "black" : colorScale(feature.properties.num))
+            .attr("d", feature => pathGenerator(feature));
+        // render text
+        svg
+            .selectAll(".label")
+            .data([selectedCountry])
+            .join("text")
+            .attr("class", "label")
+            .text(
+                feature =>
+                    feature &&
+                    feature.properties.name +
+                    ": " +
+                    feature.properties.num.toLocaleString()
+            )
+            .attr("x", 10)
+            .attr("y", 25);
+
+
+
+    }, [data, dimensions, property, selectedCountry, date]);
 
     return (
         <div ref={wrapperRef} style={{ marginBottom: "2rem" }}>

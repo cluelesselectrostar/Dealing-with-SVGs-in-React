@@ -8,12 +8,13 @@ import './worldmap.css';
 
 function WorldMap() {
     // Default fallback to population
-    const [property, setProperty] = useState("pop_est");
+    const [property, setProperty] = useState("total_cases");
+    const [date, setDate] = useState("2021-08-27");
 
     return (
         <React.Fragment>
             <h2>World Map with d3-geo</h2>
-            <GeoChart data={data} coviddata={coviddata} property={property} />
+            <GeoChart data={data} coviddata={coviddata} property={property} date={date}/>
             <h2>Select property to highlight</h2>
             <select
                 value={property}
@@ -38,12 +39,23 @@ function WorldMap() {
                 <option value="total_vaccinations">Total Vaccinations</option>
                 <option value="total_vaccinations_per_hundred">Total Vaccinations Per Hundred</option>
                 <option value="people_vaccinated">People Vaccinated</option>
-                <option value="people_vaccinated_per_hundred">People Vaccinations Per Hundred</option>
+                <option value="people_vaccinated_per_hundred">People Vaccinated Per Hundred</option>
                 <option value="stringency_index">Stringency Index</option>
-                
+
 
             </select>
-            {/* <Video /> */}
+
+            <br></br>
+
+            <input
+                type="date"
+                id="start"
+                name="trip-start"
+                value={date}
+                min="2020-01-01"
+                max="2021-08-27"
+                onChange={event => setDate(event.target.value)}
+            ></input>
         </React.Fragment>
     );
 }
