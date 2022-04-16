@@ -8,7 +8,7 @@ import WorldMap from './worldmap';
 function App() {
   return (
     <div>
-      <WorldMap/>
+      <TubeChart/>
     </div>
   );
 }

@@ -1,17 +1,19 @@
 import React, { useEffect, useRef } from "react";
 import * as d3 from 'd3';
 import './LineChart.css';
+import * as tubemaps from 'tubemaps';
+
+import stations_csv from './stations.csv';
+import routes_csv from './routes.csv';
+import connections_csv from './lines2.csv';
 
 const TubeChart = () => {
-    const d3Chart = useRef();
 
-    useEffect(() => {
+    return (
 
-        var TubeMap = require('tubemaps').TubeMap;
-
-        d3.csv('stations.csv', function (stations) {
-            d3.csv('lines2.csv', function (connections) {
-                d3.csv('routes.csv', function (routes) {
+        d3.csv(stations_csv, function (stations) {
+            d3.csv(connections_csv, function (connections) {
+                d3.csv(routes_csv, function (routes) {
 
                     var margin = { top: 20, right: 20, bottom: 30, left: 40 },
                         w = Math.max(760, window.innerWidth) - margin.left - margin.right,
@@ -80,7 +82,7 @@ const TubeChart = () => {
                         .tickSize(-w);
 
                     // Set up what will happen when zooming
-                    var zoom = d3.zoom()
+                    var zoom = zoom()
                         .x(x)
                         .y(y)
                         .scaleExtent([1, 10])
@@ -91,10 +93,9 @@ const TubeChart = () => {
                     */
 
                     // Setting up the canvas
-                    var vis = d3.select(d3Chart.current).append("svg")
+                    var vis = d3.select("#map").append("svg")
                         .attr("width", w + margin.left + margin.right)
                         .attr("height", h + margin.top + margin.bottom)
-                        .attr("background","red")
                         .append("g")
                         .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
 
@@ -209,13 +210,8 @@ const TubeChart = () => {
 
                 }); // load routes      
             }); // load lines
-        }); // load stations
-    })
-    return (
-        <div id="d3demo">
-            <svg ref={d3Chart}></svg>
-        </div>
-    )
+        })); // load stations
+
 }
 
 export default TubeChart;
